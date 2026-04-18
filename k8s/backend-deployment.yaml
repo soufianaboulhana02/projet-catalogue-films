@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  replicas: 2 # On demande 2 copies pour la haute disponibilité (Scaling !)
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        # REMPLACE PAR TON IMAGE (ex: soufianaboulhana02/catalogue-backend:latest)
+        image: catalogue-backend:v9
+        imagePullPolicy: Never # Pour que Minikube utilise l'image locale
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DATABASE_URL
+          value: "postgresql://admin:secret@postgres:5432/catalogue_films"
+        - name: TMDB_API_KEY
+          value: "1c9021903828653d94a867a5af5db8da"

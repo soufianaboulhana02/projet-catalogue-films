@@ -1,0 +1,6 @@
+from fastapi import FastAPI, HTTPException
+import httpx
+import os
+from dotenv import load_dotenv
+
+# Charud

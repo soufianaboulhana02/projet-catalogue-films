@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: catalogue-frontend:v9
+        image: catalogue-frontend:vf
         imagePullPolicy: Never # On dit à K8s d'utiliser l'image compilée sur ta machine
         ports:
         - containerPort: 80

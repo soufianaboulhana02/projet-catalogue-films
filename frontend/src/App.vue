@@ -18,9 +18,9 @@ const loadMovies = async (isNewSearch = false) => {
   try {
     let url = ''
     if (searchQuery.value) {
-      url = `http://192.168.33.10:8000/movies/search?query=${searchQuery.value}&page=${currentPage.value}`
+      url = `http://localhost:8000/movies/search?query=${searchQuery.value}&page=${currentPage.value}`
     } else {
-      url = `http://192.168.33.10:8000/movies/popular?page=${currentPage.value}`
+      url = `http://localhost:8000/movies/popular?page=${currentPage.value}`
     }
 
     const response = await axios.get(url)
@@ -46,7 +46,7 @@ const addToFavorites = async (movie) => {
     const payload = {
       tmdb_id: movie.id, title: movie.title, poster_path: movie.poster_path
     }
-    await axios.post('http://192.168.33.10:8000/favorites', payload)
+    await axios.post('http://localhost:8000/favorites', payload)
     alert(`Le film "${movie.title}" a ete ajoute a tes favoris !`)
   } catch (error) {
     if (error.response && error.response.status === 400) {

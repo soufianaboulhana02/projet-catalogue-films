@@ -1,48 +1,43 @@
 #!/bin/bash
 
-echo "Démarrage de l'architecture microservices (Catalogue Films)..."
+set -e  # Arrête le script à la première erreur
 
-# 1. Démarrer Minikube s'il est éteint
-minikube status > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-    echo "��� Lancement de Minikube..."
+echo "Démarrage de l'architecture microservices..."
+
+# 1. Démarrer Minikube si éteint
+if ! minikube status > /dev/null 2>&1; then
+    echo "Lancement de Minikube..."
     minikube start
 fi
 
-# . Builder les images docker 
-echo "Build des images de backend et frontend"
-docker build -t catalogue-frontend:vf ./frontend
-docker build -t catalogue-backend:vf ./backend
+# 2. Pointer Docker vers le daemon de minikube
+eval $(minikube docker-env)
 
-# 2. Charger les images locales dans le cluster
-echo "Chargement des images Docker (Frontend v9, Backend v9)..."
-minikube image load catalogue-frontend:vf
-minikube image load catalogue-backend:vf
+# 3. Build avec un tag FIXE
+TAG="VersionFInal02"
+echo "Build des images (tag: ${TAG})..."
+docker build -t catalogue-frontend:${TAG} ./frontend
+docker build -t catalogue-backend:${TAG} ./backend
 
-# 3. Appliquer les configurations Kubernetes
-echo "Déploiement des ressources (Pods, Services, PVC)..."
+# 4. Appliquer les manifests
+echo "Déploiement des ressources..."
 kubectl apply -f k8s/
 
-# 4. Nettoyer les anciens tunnels pour éviter les conflits
-echo "Libération des ports réseaux..."
-killall kubectl > /dev/null 2>&1
+# 5. Forcer le redémarrage des deployments pour qu'ils prennent la nouvelle image
+echo "Rollout des nouvelles images..."
+kubectl rollout restart deployment/frontend
+kubectl rollout restart deployment/backend
 
-# 5. Attendre que l'application soit prête
-echo "Attente du démarrage des conteneurs (Patientez...)"
-kubectl wait --for=condition=ready pod -l app=frontend --timeout=90s
-kubectl wait --for=condition=ready pod -l app=backend --timeout=90s
+# 6. Attendre que tout soit prêt
+echo "Attente du démarrage..."
+kubectl rollout status deployment/frontend --timeout=120s
+kubectl rollout status deployment/backend --timeout=120s
 
-# 6. Lancer les tunnels réseaux (Port-Forwarding)
+# 7. Afficher l'URL d'accès
+NODE_IP=$(minikube ip)
+NODE_PORT=$(kubectl get svc frontend-service -o jsonpath='{.spec.ports[0].nodePort}')
+
 echo "=================================================="
 echo "SYSTÈME OPÉRATIONNEL !"
-echo "Ouverture des tunnels vers Windows :"
-echo "Interface Web (Vue.js) : http://localhost:8080"
-echo "Documentation API (Swagger) : http://localhost:8000/docs"
+echo "Interface Web : http://${NODE_IP}:${NODE_PORT}"
 echo "=================================================="
-echo "NE FERMEZ PAS CE TERMINAL ! (Ctrl+C pour tout arrêter)"
-
-# Tunnel Backend (En arrière-plan avec &) -> Port 8000
-kubectl port-forward --address 0.0.0.0 svc/backend-service 8000:8000 &
-
-# Tunnel Frontend (Au premier plan) -> Port 80
-kubectl port-forward --address 0.0.0.0 svc/frontend-service 8080:80

@@ -15,7 +15,7 @@ spec:
       containers:
       - name: backend
         # REMPLACE PAR TON IMAGE (ex: soufianaboulhana02/catalogue-backend:latest)
-        image: catalogue-backend:vf
+        image: catalogue-backend:VersionFInal02
         imagePullPolicy: Never # Pour que Minikube utilise l'image locale
         ports:
         - containerPort: 8000

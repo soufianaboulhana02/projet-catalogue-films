@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  # 1. NOTRE BASE DE DONNÉES POSTGRESQL
+  db:
+    image: postgres:15
+    container_name: catalogue_db
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: catalogue_films
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Pour ne pas perdre les favoris si le conteneur s'arrête
+
+  # 2. NOTRE API PYTHON
+  backend:
+    build: ./backend  # Dit à Docker d'aller lire le Dockerfile dans le dossier backend
+    container_name: catalogue_backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db            # Le backend attendra que la DB soit allumée pour démarrer
+
+  # 3. NOTRE SITE VUE.JS
+  frontend:
+    build: ./frontend # Dit à Docker d'aller lire le Dockerfile dans le dossier frontend
+    container_name: catalogue_frontend
+    ports:
+      - "5173:80"     # On relie le port 80 de Nginx au port 5173 de ta machine virtuelle !
+    depends_on:
+      - backend       # Le frontend s'allume en dernier
+
+# On déclare le volume persistant pour la base de données
+volumes:
+  postgres_data:
